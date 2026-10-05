@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick Exchange — USD Converter</title>
+  <meta name="description" content="Convert US Dollars to JPY, THB, KRW, HKD and SGD at live exchange rates." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💱</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <h1>💱 Quick Exchange</h1>
+      <p class="subtitle">Type an amount in US Dollars — see it in five Asian currencies.</p>
+    </header>
+
+    <section class="input-card">
+      <label for="usd">Amount in USD</label>
+      <div class="input-wrap">
+        <span class="affix" aria-hidden="true">$</span>
+        <input
+          id="usd"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="any"
+          value="100"
+          placeholder="0"
+          autocomplete="off"
+          autofocus
+        />
+        <span class="affix suffix" aria-hidden="true">USD</span>
+      </div>
+    </section>
+
+    <p id="status" class="status" role="status">Loading live rates…</p>
+
+    <section id="results" class="grid" aria-live="polite"></section>
+
+    <footer class="footer">
+      <button id="refresh" type="button">↻ Refresh rates</button>
+      <span id="updated" class="updated"></span>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
