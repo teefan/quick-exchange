@@ -37,8 +37,12 @@
           autocomplete="off"
           autofocus
         />
-        <select id="from" aria-label="Chọn loại tiền"></select>
+        <div class="select-wrap">
+          <span id="from-display" class="select-display" aria-hidden="true">🇺🇸 USD</span>
+          <select id="from" aria-label="Chọn loại tiền"></select>
+        </div>
       </div>
+      <p id="from-name" class="from-name">Đô la Mỹ</p>
     </section>
 
     <p id="status" class="status" role="status">Đang tải tỷ giá…</p>

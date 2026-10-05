@@ -53,6 +53,8 @@ const SOURCES = [
 const els = {
   input: document.getElementById("amount"),
   from: document.getElementById("from"),
+  fromDisplay: document.getElementById("from-display"),
+  fromName: document.getElementById("from-name"),
   symbol: document.getElementById("symbol"),
   results: document.getElementById("results"),
   status: document.getElementById("status"),
@@ -136,19 +138,26 @@ function storageSet(key, value) {
   }
 }
 
-function updateSymbol() {
-  const { symbol } = CURRENCIES.find((c) => c.code === els.from.value);
+function currencyOf(code) {
+  return CURRENCIES.find((c) => c.code === code);
+}
+
+// Mirror the chosen input currency: symbol, compact select pill, full name.
+function renderFrom() {
+  const { code, flag, name, symbol } = currencyOf(els.from.value);
   els.symbol.textContent = symbol;
+  els.fromDisplay.textContent = `${flag} ${code}`;
+  els.fromName.textContent = name;
 }
 
 function buildCurrencySelect() {
   els.from.innerHTML = CURRENCIES.map(
-    ({ code, flag }) => `<option value="${code}">${flag} ${code}</option>`
+    ({ code, flag, name }) => `<option value="${code}">${flag} ${code} — ${name}</option>`
   ).join("");
 
   const saved = storageGet(FROM_KEY);
-  els.from.value = CURRENCIES.some((c) => c.code === saved) ? saved : "USD";
-  updateSymbol();
+  els.from.value = currencyOf(saved) ? saved : "USD";
+  renderFrom();
 }
 
 function buildCards() {
@@ -159,9 +168,9 @@ function buildCards() {
                aria-label="Số tiền quy đổi sang ${name}, bấm để sao chép">
         <div class="card-head">
           <span aria-hidden="true">${flag}</span>
-          <span class="name">${name}</span>
           <span class="code">${code}</span>
         </div>
+        <div class="card-name">${name}</div>
         <div class="card-value" data-role="value">—</div>
         <div class="card-rate" data-role="rate">1 ${from} = …</div>
       </article>`
@@ -360,7 +369,7 @@ els.input.addEventListener("input", render);
 
 els.from.addEventListener("change", () => {
   storageSet(FROM_KEY, els.from.value);
-  updateSymbol();
+  renderFrom();
   buildCards();
   render();
 });
