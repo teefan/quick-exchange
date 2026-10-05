@@ -1,8 +1,8 @@
 # 💱 Quick Exchange
 
-A tiny single-page app (Vietnamese UI) that converts US Dollars into six currencies:
+A tiny single-page app (Vietnamese UI) that converts between seven currencies:
 
-🇻🇳 VND · 🇯🇵 JPY · 🇹🇭 THB · 🇰🇷 KRW · 🇭🇰 HKD · 🇸🇬 SGD
+🇺🇸 USD · 🇻🇳 VND · 🇯🇵 JPY · 🇹🇭 THB · 🇰🇷 KRW · 🇭🇰 HKD · 🇸🇬 SGD
 
 **[Live demo](https://teefan.github.io/quick-exchange/)**
 
@@ -11,8 +11,9 @@ A tiny single-page app (Vietnamese UI) that converts US Dollars into six currenc
 ## Features
 
 - Clean light theme with large, readable type — mobile-first responsive layout
-- Type a USD amount and every currency updates instantly
-- Results are rounded to whole numbers (no decimals)
+- Type an amount in any of the seven currencies and the other six update instantly
+- Values of 1 or more are rounded to whole numbers; smaller values keep a few
+  decimals so they stay meaningful
 - Live rates from [exchangerate-api.com](https://www.exchangerate-api.com), with
   [Frankfurter](https://frankfurter.dev) (European Central Bank data) as a backup
 - Rate-limit friendly: rates are cached for 30 minutes and the APIs are called at

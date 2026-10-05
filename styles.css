@@ -101,14 +101,31 @@ body {
   color: var(--accent);
 }
 
-.affix.suffix {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--muted);
+#from {
   align-self: center;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid rgba(13, 148, 136, 0.35);
+  border-radius: 10px;
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-#usd {
+#from:hover {
+  border-color: var(--accent);
+}
+
+#from:focus-visible {
+  outline: 3px solid rgba(13, 148, 136, 0.35);
+  outline-offset: 2px;
+}
+
+#amount {
   flex: 1;
   min-width: 0;
   background: transparent;
@@ -121,17 +138,17 @@ body {
   letter-spacing: -0.03em;
 }
 
-#usd::placeholder {
+#amount::placeholder {
   color: #cbd5e1;
 }
 
 /* Hide native number spinners */
-#usd::-webkit-outer-spin-button,
-#usd::-webkit-inner-spin-button {
+#amount::-webkit-outer-spin-button,
+#amount::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-#usd[type="number"] {
+#amount[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }

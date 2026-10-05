@@ -1,7 +1,7 @@
 {
   "name": "Quick Exchange — Quy đổi tiền tệ",
   "short_name": "Quick Exchange",
-  "description": "Quy đổi Đô la Mỹ sang Đồng Việt Nam, Yên Nhật, Baht Thái, Won Hàn Quốc, Đô la Hồng Kông và Đô la Singapore theo tỷ giá trực tiếp.",
+  "description": "Quy đổi giữa Đô la Mỹ và Đồng Việt Nam, Yên Nhật, Baht Thái, Won Hàn Quốc, Đô la Hồng Kông, Đô la Singapore theo tỷ giá trực tiếp.",
   "lang": "vi",
   "start_url": ".",
   "scope": ".",

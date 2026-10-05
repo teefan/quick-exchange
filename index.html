@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Quick Exchange — Quy đổi tiền tệ</title>
-  <meta name="description" content="Quy đổi Đô la Mỹ sang Đồng Việt Nam, Yên Nhật, Baht Thái, Won Hàn Quốc, Đô la Hồng Kông và Đô la Singapore theo tỷ giá trực tiếp." />
+  <meta name="description" content="Quy đổi giữa Đô la Mỹ và Đồng Việt Nam, Yên Nhật, Baht Thái, Won Hàn Quốc, Đô la Hồng Kông, Đô la Singapore theo tỷ giá trực tiếp." />
   <meta name="theme-color" content="#f4f6fb" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -19,15 +19,15 @@
   <main class="app">
     <header class="hero">
       <h1>💱 Quick Exchange</h1>
-      <p class="subtitle">Nhập số tiền bằng USD — quy đổi ngay sang sáu loại tiền châu Á.</p>
+      <p class="subtitle">Nhập số tiền bằng bất kỳ loại tiền nào — quy đổi ngay sang các loại tiền còn lại.</p>
     </header>
 
     <section class="input-card">
-      <label for="usd">Số tiền (USD)</label>
+      <label for="amount">Số tiền</label>
       <div class="input-wrap">
-        <span class="affix" aria-hidden="true">$</span>
+        <span id="symbol" class="affix" aria-hidden="true">$</span>
         <input
-          id="usd"
+          id="amount"
           type="number"
           inputmode="decimal"
           min="0"
@@ -37,7 +37,7 @@
           autocomplete="off"
           autofocus
         />
-        <span class="affix suffix" aria-hidden="true">USD</span>
+        <select id="from" aria-label="Loại tiền nhập"></select>
       </div>
     </section>
 

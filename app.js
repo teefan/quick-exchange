@@ -1,17 +1,19 @@
-/* Quick Exchange — USD → VND / JPY / THB / KRW / HKD / SGD
+/* Quick Exchange — convert between USD and VND / JPY / THB / KRW / HKD / SGD.
+ * Type an amount in any of the seven currencies; the other six update instantly.
  * Live rates: exchangerate-api.com with a Frankfurter (ECB) backup.
  * If both APIs are unreachable, a built-in snapshot is used. */
 
 const CURRENCIES = [
-  { code: "VND", name: "Đồng Việt Nam", flag: "🇻🇳" },
-  { code: "JPY", name: "Yên Nhật", flag: "🇯🇵" },
-  { code: "THB", name: "Baht Thái", flag: "🇹🇭" },
-  { code: "KRW", name: "Won Hàn Quốc", flag: "🇰🇷" },
-  { code: "HKD", name: "Đô la Hồng Kông", flag: "🇭🇰" },
-  { code: "SGD", name: "Đô la Singapore", flag: "🇸🇬" },
+  { code: "USD", name: "Đô la Mỹ", flag: "🇺🇸", symbol: "$" },
+  { code: "VND", name: "Đồng Việt Nam", flag: "🇻🇳", symbol: "₫" },
+  { code: "JPY", name: "Yên Nhật", flag: "🇯🇵", symbol: "¥" },
+  { code: "THB", name: "Baht Thái", flag: "🇹🇭", symbol: "฿" },
+  { code: "KRW", name: "Won Hàn Quốc", flag: "🇰🇷", symbol: "₩" },
+  { code: "HKD", name: "Đô la Hồng Kông", flag: "🇭🇰", symbol: "HK$" },
+  { code: "SGD", name: "Đô la Singapore", flag: "🇸🇬", symbol: "S$" },
 ];
 
-// Used only if every live source fails (e.g. offline).
+// Used only if every live source fails (e.g. offline). Rates are quoted per USD.
 const FALLBACK = {
   date: "2026-10-05",
   provider: "tỷ giá lưu sẵn",
@@ -27,7 +29,9 @@ const SOURCES = [
     parse: (data) => {
       if (data.result !== "success") throw new Error(data["error-type"] || "API error");
       const rates = {};
-      for (const { code } of CURRENCIES) rates[code] = data.rates[code];
+      for (const { code } of CURRENCIES) {
+        if (code !== "USD") rates[code] = data.rates[code]; // USD is the base.
+      }
       return {
         rates,
         date: new Date(data.time_last_update_utc).toISOString().slice(0, 10),
@@ -37,7 +41,7 @@ const SOURCES = [
   {
     // Backup: ECB reference rates (VND is not published by the ECB).
     url: `https://api.frankfurter.dev/v1/latest?base=USD&symbols=${CURRENCIES.filter(
-      (c) => c.code !== "VND"
+      (c) => c.code !== "VND" && c.code !== "USD"
     )
       .map((c) => c.code)
       .join(",")}`,
@@ -47,7 +51,9 @@ const SOURCES = [
 ];
 
 const els = {
-  input: document.getElementById("usd"),
+  input: document.getElementById("amount"),
+  from: document.getElementById("from"),
+  symbol: document.getElementById("symbol"),
   results: document.getElementById("results"),
   status: document.getElementById("status"),
   refresh: document.getElementById("refresh"),
@@ -61,23 +67,40 @@ let meta = { date: null, provider: null, kind: "loading" };
 
 /* ---------- Formatting ---------- */
 
+// Whole numbers for amounts ≥ 1 (what people normally convert); smaller values
+// keep just enough decimals to stay meaningful instead of rounding to zero.
+function fractionDigits(value) {
+  const abs = Math.abs(value);
+  if (abs >= 1 || abs === 0) return 0;
+  return Math.min(8, Math.max(2, 3 - Math.floor(Math.log10(abs))));
+}
+
 const currencyFmt = new Map();
 function formatCurrency(amount, code) {
-  if (!currencyFmt.has(code)) {
+  const digits = fractionDigits(amount);
+  const key = `${code}:${digits}`;
+  if (!currencyFmt.has(key)) {
     currencyFmt.set(
-      code,
+      key,
       new Intl.NumberFormat(LOCALE, {
         style: "currency",
         currency: code,
         minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        maximumFractionDigits: digits,
       })
     );
   }
-  return currencyFmt.get(code).format(Math.round(amount));
+  return currencyFmt.get(key).format(amount);
 }
 
-const rateFmt = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 });
+const rateFmt = new Map();
+function formatRate(rate) {
+  const digits = rate >= 1 ? 2 : fractionDigits(rate);
+  if (!rateFmt.has(digits)) {
+    rateFmt.set(digits, new Intl.NumberFormat(LOCALE, { maximumFractionDigits: digits }));
+  }
+  return rateFmt.get(digits).format(rate);
+}
 
 const dateFmt = new Intl.DateTimeFormat(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric" });
 function formatDate(iso) {
@@ -86,15 +109,51 @@ function formatDate(iso) {
   return dateFmt.format(new Date(y, m - 1, d));
 }
 
-// Clipboard gets a plain whole number (no grouping, no decimals).
+// Clipboard gets a plain number (no grouping): whole numbers for values ≥ 1,
+// otherwise the same precision the card shows so small values don't copy as 0.
 function formatCopy(amount) {
-  return String(Math.round(amount));
+  if (Math.abs(amount) >= 1) return String(Math.round(amount));
+  return String(Number(amount.toFixed(fractionDigits(amount))));
 }
 
 /* ---------- DOM ---------- */
 
+const FROM_KEY = "quick-exchange:from";
+
+function readFrom() {
+  try {
+    return localStorage.getItem(FROM_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeFrom(code) {
+  try {
+    localStorage.setItem(FROM_KEY, code);
+  } catch {
+    /* Storage unavailable — the choice just won't persist. */
+  }
+}
+
+function updateSymbol() {
+  const { symbol } = CURRENCIES.find((c) => c.code === els.from.value);
+  els.symbol.textContent = symbol;
+}
+
+function buildCurrencySelect() {
+  els.from.innerHTML = CURRENCIES.map(
+    ({ code, flag }) => `<option value="${code}">${flag} ${code}</option>`
+  ).join("");
+
+  const saved = readFrom();
+  els.from.value = CURRENCIES.some((c) => c.code === saved) ? saved : "USD";
+  updateSymbol();
+}
+
 function buildCards() {
-  els.results.innerHTML = CURRENCIES.map(
+  const from = els.from.value;
+  els.results.innerHTML = CURRENCIES.filter((c) => c.code !== from).map(
     ({ code, name, flag }) => `
       <article class="card" data-code="${code}" tabindex="0" role="button"
                aria-label="Số tiền quy đổi sang ${name}, bấm để sao chép">
@@ -104,7 +163,7 @@ function buildCards() {
           <span class="code">${code}</span>
         </div>
         <div class="card-value" data-role="value">—</div>
-        <div class="card-rate" data-role="rate">1 USD = …</div>
+        <div class="card-rate" data-role="rate">1 ${from} = …</div>
       </article>`
   ).join("");
 }
@@ -117,24 +176,34 @@ function currentAmount() {
   return value;
 }
 
+// All rates are quoted per USD, so cross rates are just a division.
+function rateFor(code) {
+  return code === "USD" ? 1 : rates?.[code];
+}
+
+function convert(amount, from, to) {
+  const fromRate = rateFor(from);
+  const toRate = rateFor(to);
+  if (!fromRate || !toRate) return null;
+  return (amount * toRate) / fromRate;
+}
+
 function render() {
   const amount = currentAmount();
+  const from = els.from.value;
 
   for (const card of els.results.children) {
     const code = card.dataset.code;
-    const rate = rates?.[code];
+    const cross = convert(1, from, code);
     const valueEl = card.querySelector('[data-role="value"]');
     const rateEl = card.querySelector('[data-role="rate"]');
 
-    if (!rate) {
+    if (cross === null) {
       valueEl.textContent = "—";
       rateEl.textContent = "Không có tỷ giá";
-    } else if (amount === null) {
-      valueEl.textContent = "—";
-      rateEl.textContent = `1 USD = ${rateFmt.format(rate)} ${code}`;
     } else {
-      valueEl.textContent = formatCurrency(amount * rate, code);
-      rateEl.textContent = `1 USD = ${rateFmt.format(rate)} ${code}`;
+      rateEl.textContent = `1 ${from} = ${formatRate(cross)} ${code}`;
+      valueEl.textContent = amount === null ? "—" : formatCurrency(convert(amount, from, code), code);
     }
   }
 }
@@ -288,6 +357,13 @@ function syncCooldown() {
 
 els.input.addEventListener("input", render);
 
+els.from.addEventListener("change", () => {
+  writeFrom(els.from.value);
+  updateSymbol();
+  buildCards();
+  render();
+});
+
 els.refresh.addEventListener("click", () => loadRates({ force: true }));
 
 els.results.addEventListener("click", async (event) => {
@@ -297,7 +373,10 @@ els.results.addEventListener("click", async (event) => {
   const amount = currentAmount();
   if (amount === null) return;
 
-  const text = formatCopy(amount * rates[card.dataset.code]);
+  const converted = convert(amount, els.from.value, card.dataset.code);
+  if (converted === null) return;
+
+  const text = formatCopy(converted);
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -364,6 +443,7 @@ window.addEventListener("appinstalled", () => {
 
 /* ---------- Init ---------- */
 
+buildCurrencySelect();
 buildCards();
 renderStatus();
 loadRates();
