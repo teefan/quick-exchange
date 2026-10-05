@@ -22,6 +22,8 @@ A tiny single-page app (Vietnamese UI) that converts between seven currencies:
 - Click (or tap) any card to copy the converted amount
 - **Installable as an app**: web app manifest + service worker, so it launches
   standalone from the home screen and works offline
+- **Update button**: checks for a new version, clears the cached app shell and
+  reloads the latest build — useful for installed apps that rarely relaunch
 
 ## Install as an app
 

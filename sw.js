@@ -1,6 +1,6 @@
 /* Quick Exchange service worker — caches the app shell so it opens offline. */
 
-const CACHE = "quick-exchange-v6";
+const CACHE = "quick-exchange-v7";
 
 const ASSETS = [
   "./",
@@ -54,19 +54,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets: cache first, refresh in the background.
+  // Static assets: network first so a new build lands on the very next load,
+  // with the cached copy as the offline fallback.
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetched = fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || fetched;
-    })
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });

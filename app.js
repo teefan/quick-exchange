@@ -59,6 +59,7 @@ const els = {
   results: document.getElementById("results"),
   status: document.getElementById("status"),
   refresh: document.getElementById("refresh"),
+  update: document.getElementById("update"),
   updated: document.getElementById("updated"),
   install: document.getElementById("install"),
   iosHint: document.getElementById("ios-hint"),
@@ -376,6 +377,8 @@ els.from.addEventListener("change", () => {
 
 els.refresh.addEventListener("click", () => loadRates({ force: true }));
 
+els.update.addEventListener("click", updateApp);
+
 els.results.addEventListener("click", async (event) => {
   const card = event.target.closest(".card");
   if (!card) return;
@@ -406,10 +409,42 @@ els.results.addEventListener("keydown", (event) => {
 
 /* ---------- PWA: service worker + install ---------- */
 
+async function clearAppCaches() {
+  if (!("caches" in window)) return;
+  const keys = await caches.keys();
+  await Promise.all(
+    keys.filter((key) => key.startsWith("quick-exchange")).map((key) => caches.delete(key))
+  );
+}
+
+// Force the freshest deployed build: check for a new service worker, drop the
+// cached shell, then reload from the network. Installed apps can otherwise sit
+// on a cached version for a long time, since they rarely trigger a navigation.
+async function updateApp() {
+  els.update.disabled = true;
+  els.update.textContent = "Đang kiểm tra…";
+
+  try {
+    const registration = navigator.serviceWorker
+      ? await navigator.serviceWorker.getRegistration()
+      : null;
+    if (registration) await registration.update();
+    if (!navigator.onLine) throw new Error("offline");
+
+    els.update.textContent = "Đang tải bản mới…";
+    await clearAppCaches();
+    location.reload();
+  } catch (err) {
+    console.warn("Update check failed", err);
+    els.update.textContent = "Lỗi — thử lại";
+    els.update.disabled = false;
+  }
+}
+
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("./sw.js")
+      .register("./sw.js", { updateViaCache: "none" })
       .catch((err) => console.warn("Service worker registration failed", err));
   });
 }
