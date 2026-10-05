@@ -1,6 +1,6 @@
 /* Quick Exchange service worker — caches the app shell so it opens offline. */
 
-const CACHE = "quick-exchange-v4";
+const CACHE = "quick-exchange-v5";
 
 const ASSETS = [
   "./",

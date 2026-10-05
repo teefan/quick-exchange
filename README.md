@@ -57,7 +57,7 @@ gh api -X POST repos/{owner}/quick-exchange/pages \
 | File                    | Purpose                                    |
 | ----------------------- | ------------------------------------------ |
 | `index.html`            | Markup + PWA metadata                      |
-| `styles.css`            | Styling (dark theme, mobile breakpoints)   |
+| `styles.css`            | Styling (light theme, mobile breakpoints)  |
 | `app.js`                | Rates, conversion, install prompt          |
 | `manifest.webmanifest`  | Web app manifest for installation          |
 | `sw.js`                 | Service worker — offline caching           |

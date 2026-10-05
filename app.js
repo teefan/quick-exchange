@@ -39,7 +39,7 @@ const SOURCES = [
     },
   },
   {
-    // Backup: ECB reference rates (VND is not published by the ECB).
+    // Backup: ECB reference rates (no VND; USD is the base).
     url: `https://api.frankfurter.dev/v1/latest?base=USD&symbols=${CURRENCIES.filter(
       (c) => c.code !== "VND" && c.code !== "USD"
     )
@@ -120,19 +120,19 @@ function formatCopy(amount) {
 
 const FROM_KEY = "quick-exchange:from";
 
-function readFrom() {
+function storageGet(key) {
   try {
-    return localStorage.getItem(FROM_KEY);
+    return localStorage.getItem(key);
   } catch {
-    return null;
+    return null; // Storage unavailable (e.g. private mode).
   }
 }
 
-function writeFrom(code) {
+function storageSet(key, value) {
   try {
-    localStorage.setItem(FROM_KEY, code);
+    localStorage.setItem(key, value);
   } catch {
-    /* Storage unavailable — the choice just won't persist. */
+    /* Storage unavailable — just don't persist. */
   }
 }
 
@@ -146,7 +146,7 @@ function buildCurrencySelect() {
     ({ code, flag }) => `<option value="${code}">${flag} ${code}</option>`
   ).join("");
 
-  const saved = readFrom();
+  const saved = storageGet(FROM_KEY);
   els.from.value = CURRENCIES.some((c) => c.code === saved) ? saved : "USD";
   updateSymbol();
 }
@@ -181,11 +181,16 @@ function rateFor(code) {
   return code === "USD" ? 1 : rates?.[code];
 }
 
-function convert(amount, from, to) {
+function crossRate(from, to) {
   const fromRate = rateFor(from);
   const toRate = rateFor(to);
   if (!fromRate || !toRate) return null;
-  return (amount * toRate) / fromRate;
+  return toRate / fromRate;
+}
+
+function convert(amount, from, to) {
+  const cross = crossRate(from, to);
+  return cross === null ? null : amount * cross;
 }
 
 function render() {
@@ -194,7 +199,7 @@ function render() {
 
   for (const card of els.results.children) {
     const code = card.dataset.code;
-    const cross = convert(1, from, code);
+    const cross = crossRate(from, code);
     const valueEl = card.querySelector('[data-role="value"]');
     const rateEl = card.querySelector('[data-role="rate"]');
 
@@ -203,7 +208,7 @@ function render() {
       rateEl.textContent = "Không có tỷ giá";
     } else {
       rateEl.textContent = `1 ${from} = ${formatRate(cross)} ${code}`;
-      valueEl.textContent = amount === null ? "—" : formatCurrency(convert(amount, from, code), code);
+      valueEl.textContent = amount === null ? "—" : formatCurrency(amount * cross, code);
     }
   }
 }
@@ -225,6 +230,13 @@ function renderStatus() {
   els.updated.textContent = meta.kind === "live" ? "Tỷ giá cập nhật vào các ngày giao dịch trong tuần." : "";
 }
 
+// Repaint the status, the amount cards and the refresh cooldown together.
+function renderAll() {
+  renderStatus();
+  render();
+  syncCooldown();
+}
+
 /* ---------- Data loading ---------- */
 
 const CACHE_KEY = "quick-exchange:rates";
@@ -234,18 +246,14 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000; // Ignore stored rates older than a day.
 
 function readStore() {
   try {
-    return JSON.parse(localStorage.getItem(CACHE_KEY)) || {};
+    return JSON.parse(storageGet(CACHE_KEY)) || {};
   } catch {
     return {};
   }
 }
 
 function writeStore(patch) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ...readStore(), ...patch }));
-  } catch {
-    /* Storage unavailable (private mode) — throttling just won't persist. */
-  }
+  storageSet(CACHE_KEY, JSON.stringify({ ...readStore(), ...patch }));
 }
 
 async function fetchJson(url, timeoutMs = 8000) {
@@ -270,20 +278,15 @@ async function loadRates({ force = false } = {}) {
 
   // Fresh cache: skip the network entirely.
   if (!force && store.rates && now - store.fetchedAt < RATE_TTL_MS) {
-    rates = store.rates;
-    meta = { date: store.date, provider: store.provider, kind: "live" };
-    renderStatus();
-    render();
-    syncCooldown();
+    useStoredRates(store, "live");
+    renderAll();
     return;
   }
 
   // Throttle: at most one API attempt per minute, across page reloads too.
   if (now - (store.lastAttemptAt || 0) < MIN_INTERVAL_MS) {
     useStoredRates(store, "live");
-    renderStatus();
-    render();
-    syncCooldown();
+    renderAll();
     return;
   }
 
@@ -316,9 +319,7 @@ async function loadRates({ force = false } = {}) {
     useStoredRates(store, "stale"); // Keep the last known rates on screen.
   }
 
-  renderStatus();
-  render();
-  syncCooldown();
+  renderAll();
 }
 
 /* ---------- Refresh cooldown UI ---------- */
@@ -358,7 +359,7 @@ function syncCooldown() {
 els.input.addEventListener("input", render);
 
 els.from.addEventListener("change", () => {
-  writeFrom(els.from.value);
+  storageSet(FROM_KEY, els.from.value);
   updateSymbol();
   buildCards();
   render();
@@ -368,7 +369,7 @@ els.refresh.addEventListener("click", () => loadRates({ force: true }));
 
 els.results.addEventListener("click", async (event) => {
   const card = event.target.closest(".card");
-  if (!card || !rates) return;
+  if (!card) return;
 
   const amount = currentAmount();
   if (amount === null) return;
