@@ -1,8 +1,8 @@
 # 💱 Quick Exchange
 
-A tiny single-page app that converts US Dollars into five Asian currencies:
+A tiny single-page app (Vietnamese UI) that converts US Dollars into six currencies:
 
-🇯🇵 JPY · 🇹🇭 THB · 🇰🇷 KRW · 🇭🇰 HKD · 🇸🇬 SGD
+🇻🇳 VND · 🇯🇵 JPY · 🇹🇭 THB · 🇰🇷 KRW · 🇭🇰 HKD · 🇸🇬 SGD
 
 **[Live demo](https://teefan.github.io/quick-exchange/)**
 
@@ -10,12 +10,15 @@ A tiny single-page app that converts US Dollars into five Asian currencies:
 
 ## Features
 
+- Clean light theme with large, readable type — mobile-first responsive layout
 - Type a USD amount and every currency updates instantly
-- Live rates from the [Frankfurter API](https://frankfurter.dev) (European Central Bank data),
-  with [exchangerate-api.com](https://www.exchangerate-api.com) as a backup
+- Results are rounded to whole numbers (no decimals)
+- Live rates from [exchangerate-api.com](https://www.exchangerate-api.com), with
+  [Frankfurter](https://frankfurter.dev) (European Central Bank data) as a backup
+- Rate-limit friendly: rates are cached for 30 minutes and the APIs are called at
+  most once a minute, with a visible refresh cooldown
 - Falls back to a built-in rate snapshot when offline
 - Click (or tap) any card to copy the converted amount
-- Mobile-first responsive layout
 - **Installable as an app**: web app manifest + service worker, so it launches
   standalone from the home screen and works offline
 

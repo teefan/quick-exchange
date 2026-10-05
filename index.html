@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Quick Exchange — USD Converter</title>
-  <meta name="description" content="Convert US Dollars to JPY, THB, KRW, HKD and SGD at live exchange rates." />
-  <meta name="theme-color" content="#0b1220" />
+  <title>Quick Exchange — Quy đổi tiền tệ</title>
+  <meta name="description" content="Quy đổi Đô la Mỹ sang Đồng Việt Nam, Yên Nhật, Baht Thái, Won Hàn Quốc, Đô la Hồng Kông và Đô la Singapore theo tỷ giá trực tiếp." />
+  <meta name="theme-color" content="#f4f6fb" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -19,11 +19,11 @@
   <main class="app">
     <header class="hero">
       <h1>💱 Quick Exchange</h1>
-      <p class="subtitle">Type an amount in US Dollars — see it in five Asian currencies.</p>
+      <p class="subtitle">Nhập số tiền bằng USD — quy đổi ngay sang sáu loại tiền châu Á.</p>
     </header>
 
     <section class="input-card">
-      <label for="usd">Amount in USD</label>
+      <label for="usd">Số tiền (USD)</label>
       <div class="input-wrap">
         <span class="affix" aria-hidden="true">$</span>
         <input
@@ -41,20 +41,20 @@
       </div>
     </section>
 
-    <p id="status" class="status" role="status">Loading live rates…</p>
+    <p id="status" class="status" role="status">Đang tải tỷ giá…</p>
 
     <section id="results" class="grid" aria-live="polite"></section>
 
     <footer class="footer">
       <div class="actions">
-        <button id="refresh" type="button">↻ Refresh rates</button>
-        <button id="install" class="primary" type="button" hidden>⤓ Install app</button>
+        <button id="refresh" type="button">↻ Làm mới tỷ giá</button>
+        <button id="install" class="primary" type="button" hidden>⤓ Cài đặt ứng dụng</button>
       </div>
       <span id="updated" class="updated"></span>
     </footer>
     <p id="ios-hint" class="ios-hint" hidden>
-      Tap <strong>Share</strong> <span aria-hidden="true">⎋</span> in Safari, then
-      <strong>Add to Home Screen</strong> to install.
+      Trong Safari, bấm <strong>Chia sẻ</strong> <span aria-hidden="true">⎋</span> rồi chọn
+      <strong>Thêm vào Màn hình chính</strong> để cài đặt.
     </p>
   </main>
 

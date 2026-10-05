@@ -1,12 +1,13 @@
 {
-  "name": "Quick Exchange — USD Converter",
+  "name": "Quick Exchange — Quy đổi tiền tệ",
   "short_name": "Quick Exchange",
-  "description": "Convert US Dollars to Japanese Yen, Thai Baht, South Korean Won, Hong Kong Dollars and Singapore Dollars at live exchange rates.",
+  "description": "Quy đổi Đô la Mỹ sang Đồng Việt Nam, Yên Nhật, Baht Thái, Won Hàn Quốc, Đô la Hồng Kông và Đô la Singapore theo tỷ giá trực tiếp.",
+  "lang": "vi",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
-  "background_color": "#0b1220",
-  "theme_color": "#0b1220",
+  "background_color": "#f4f6fb",
+  "theme_color": "#f4f6fb",
   "categories": ["finance", "utilities"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },

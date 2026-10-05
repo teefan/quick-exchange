@@ -1,30 +1,27 @@
-/* Quick Exchange — USD → JPY / THB / KRW / HKD / SGD
- * Live rates: Frankfurter (ECB) with an exchangerate-api.com backup.
+/* Quick Exchange — USD → VND / JPY / THB / KRW / HKD / SGD
+ * Live rates: exchangerate-api.com with a Frankfurter (ECB) backup.
  * If both APIs are unreachable, a built-in snapshot is used. */
 
 const CURRENCIES = [
-  { code: "JPY", name: "Japanese Yen", flag: "🇯🇵" },
-  { code: "THB", name: "Thai Baht", flag: "🇹🇭" },
-  { code: "KRW", name: "South Korean Won", flag: "🇰🇷" },
-  { code: "HKD", name: "Hong Kong Dollar", flag: "🇭🇰" },
-  { code: "SGD", name: "Singapore Dollar", flag: "🇸🇬" },
+  { code: "VND", name: "Đồng Việt Nam", flag: "🇻🇳" },
+  { code: "JPY", name: "Yên Nhật", flag: "🇯🇵" },
+  { code: "THB", name: "Baht Thái", flag: "🇹🇭" },
+  { code: "KRW", name: "Won Hàn Quốc", flag: "🇰🇷" },
+  { code: "HKD", name: "Đô la Hồng Kông", flag: "🇭🇰" },
+  { code: "SGD", name: "Đô la Singapore", flag: "🇸🇬" },
 ];
 
 // Used only if every live source fails (e.g. offline).
 const FALLBACK = {
-  date: "2026-10-02",
-  provider: "built-in snapshot",
-  rates: { JPY: 157.67, THB: 33.595, KRW: 1348.28, HKD: 7.8471, SGD: 1.2798 },
+  date: "2026-10-05",
+  provider: "tỷ giá lưu sẵn",
+  rates: { VND: 25949, JPY: 157.73, THB: 33.566, KRW: 1344.61, HKD: 7.848, SGD: 1.2794 },
 };
 
-const CODES = CURRENCIES.map((c) => c.code).join(",");
+const LOCALE = "vi-VN"; // UI language — also drives number/date formatting.
 const SOURCES = [
   {
-    url: `https://api.frankfurter.dev/v1/latest?base=USD&symbols=${CODES}`,
-    provider: "Frankfurter (ECB)",
-    parse: (data) => ({ rates: data.rates, date: data.date }),
-  },
-  {
+    // Primary source: the only one of the two that publishes VND.
     url: "https://open.er-api.com/v6/latest/USD",
     provider: "exchangerate-api.com",
     parse: (data) => {
@@ -36,6 +33,16 @@ const SOURCES = [
         date: new Date(data.time_last_update_utc).toISOString().slice(0, 10),
       };
     },
+  },
+  {
+    // Backup: ECB reference rates (VND is not published by the ECB).
+    url: `https://api.frankfurter.dev/v1/latest?base=USD&symbols=${CURRENCIES.filter(
+      (c) => c.code !== "VND"
+    )
+      .map((c) => c.code)
+      .join(",")}`,
+    provider: "Frankfurter (ECB)",
+    parse: (data) => ({ rates: data.rates, date: data.date }),
   },
 ];
 
@@ -57,26 +64,31 @@ let meta = { date: null, provider: null, kind: "loading" };
 const currencyFmt = new Map();
 function formatCurrency(amount, code) {
   if (!currencyFmt.has(code)) {
-    currencyFmt.set(code, new Intl.NumberFormat(undefined, { style: "currency", currency: code }));
-  }
-  return currencyFmt.get(code).format(amount);
-}
-
-const rateFmt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 });
-const copyFmt = new Map();
-function formatCopy(amount, code) {
-  if (!copyFmt.has(code)) {
-    const zeroDecimals = code === "JPY" || code === "KRW";
-    copyFmt.set(
+    currencyFmt.set(
       code,
-      new Intl.NumberFormat(undefined, {
-        useGrouping: false,
+      new Intl.NumberFormat(LOCALE, {
+        style: "currency",
+        currency: code,
         minimumFractionDigits: 0,
-        maximumFractionDigits: zeroDecimals ? 0 : 2,
+        maximumFractionDigits: 0,
       })
     );
   }
-  return copyFmt.get(code).format(amount);
+  return currencyFmt.get(code).format(Math.round(amount));
+}
+
+const rateFmt = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 });
+
+const dateFmt = new Intl.DateTimeFormat(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric" });
+function formatDate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number); // Parse as local date, not UTC.
+  return dateFmt.format(new Date(y, m - 1, d));
+}
+
+// Clipboard gets a plain whole number (no grouping, no decimals).
+function formatCopy(amount) {
+  return String(Math.round(amount));
 }
 
 /* ---------- DOM ---------- */
@@ -85,7 +97,7 @@ function buildCards() {
   els.results.innerHTML = CURRENCIES.map(
     ({ code, name, flag }) => `
       <article class="card" data-code="${code}" tabindex="0" role="button"
-               aria-label="Converted amount in ${name}, click to copy">
+               aria-label="Số tiền quy đổi sang ${name}, bấm để sao chép">
         <div class="card-head">
           <span aria-hidden="true">${flag}</span>
           <span class="name">${name}</span>
@@ -116,7 +128,7 @@ function render() {
 
     if (!rate) {
       valueEl.textContent = "—";
-      rateEl.textContent = "rate unavailable";
+      rateEl.textContent = "Không có tỷ giá";
     } else if (amount === null) {
       valueEl.textContent = "—";
       rateEl.textContent = `1 USD = ${rateFmt.format(rate)} ${code}`;
@@ -132,19 +144,40 @@ function renderStatus() {
   el.dataset.kind = meta.kind;
 
   if (meta.kind === "loading") {
-    el.textContent = "Loading live rates…";
+    el.textContent = "Đang tải tỷ giá…";
   } else if (meta.kind === "live") {
-    el.textContent = `Live rates · ${meta.provider} · ${meta.date}`;
+    el.textContent = `Tỷ giá trực tiếp · ${meta.provider} · ${formatDate(meta.date)}`;
   } else if (meta.kind === "stale") {
-    el.textContent = `⚠ Couldn't refresh — showing ${meta.provider} from ${meta.date}`;
+    el.textContent = `⚠ Không làm mới được — đang hiển thị ${meta.provider} ngày ${formatDate(meta.date)}`;
   } else {
-    el.textContent = `⚠ Offline — showing ${meta.provider} from ${meta.date}`;
+    el.textContent = `⚠ Ngoại tuyến — đang dùng tỷ giá lưu sẵn ngày ${formatDate(meta.date)}`;
   }
 
-  els.updated.textContent = meta.kind === "live" ? "Rates update on weekday market days." : "";
+  els.updated.textContent = meta.kind === "live" ? "Tỷ giá cập nhật vào các ngày giao dịch trong tuần." : "";
 }
 
 /* ---------- Data loading ---------- */
+
+const CACHE_KEY = "quick-exchange:rates";
+const RATE_TTL_MS = 30 * 60 * 1000; // Reuse stored rates for 30 minutes.
+const MIN_INTERVAL_MS = 60 * 1000; // Never call the APIs more than once a minute.
+const MAX_AGE_MS = 24 * 60 * 60 * 1000; // Ignore stored rates older than a day.
+
+function readStore() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStore(patch) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ...readStore(), ...patch }));
+  } catch {
+    /* Storage unavailable (private mode) — throttling just won't persist. */
+  }
+}
 
 async function fetchJson(url, timeoutMs = 8000) {
   const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
@@ -152,11 +185,43 @@ async function fetchJson(url, timeoutMs = 8000) {
   return res.json();
 }
 
-async function loadRates() {
-  const previous = meta;
+function useStoredRates(store, kind) {
+  if (store.rates && Date.now() - store.fetchedAt < MAX_AGE_MS) {
+    rates = store.rates;
+    meta = { date: store.date, provider: store.provider, kind };
+  } else {
+    rates = FALLBACK.rates;
+    meta = { date: FALLBACK.date, provider: FALLBACK.provider, kind: "fallback" };
+  }
+}
+
+async function loadRates({ force = false } = {}) {
+  const now = Date.now();
+  const store = readStore();
+
+  // Fresh cache: skip the network entirely.
+  if (!force && store.rates && now - store.fetchedAt < RATE_TTL_MS) {
+    rates = store.rates;
+    meta = { date: store.date, provider: store.provider, kind: "live" };
+    renderStatus();
+    render();
+    syncCooldown();
+    return;
+  }
+
+  // Throttle: at most one API attempt per minute, across page reloads too.
+  if (now - (store.lastAttemptAt || 0) < MIN_INTERVAL_MS) {
+    useStoredRates(store, "live");
+    renderStatus();
+    render();
+    syncCooldown();
+    return;
+  }
+
   meta = { date: null, provider: null, kind: "loading" };
   renderStatus();
   els.refresh.disabled = true;
+  writeStore({ lastAttemptAt: now });
 
   let live = null;
   for (const source of SOURCES) {
@@ -172,23 +237,58 @@ async function loadRates() {
   if (live) {
     rates = live.rates;
     meta = { date: live.date, provider: live.provider, kind: "live" };
-  } else if (rates) {
-    meta = { ...previous, kind: "stale" }; // Keep the last known rates on screen.
+    writeStore({
+      rates: live.rates,
+      date: live.date,
+      provider: live.provider,
+      fetchedAt: Date.now(),
+    });
   } else {
-    rates = FALLBACK.rates;
-    meta = { date: FALLBACK.date, provider: FALLBACK.provider, kind: "fallback" };
+    useStoredRates(store, "stale"); // Keep the last known rates on screen.
   }
 
-  els.refresh.disabled = false;
   renderStatus();
   render();
+  syncCooldown();
+}
+
+/* ---------- Refresh cooldown UI ---------- */
+
+let cooldownTimer = null;
+
+function syncCooldown() {
+  const until = (readStore().lastAttemptAt || 0) + MIN_INTERVAL_MS;
+
+  clearInterval(cooldownTimer);
+  cooldownTimer = null;
+
+  if (Date.now() >= until) {
+    els.refresh.disabled = false;
+    renderStatus();
+    return;
+  }
+
+  els.refresh.disabled = true;
+  const tick = () => {
+    const secondsLeft = Math.ceil((until - Date.now()) / 1000);
+    if (secondsLeft > 0) {
+      els.updated.textContent = `Vui lòng chờ ${secondsLeft} giây trước khi làm mới.`;
+    } else {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+      els.refresh.disabled = false;
+      renderStatus();
+    }
+  };
+  tick();
+  cooldownTimer = setInterval(tick, 1000);
 }
 
 /* ---------- Events ---------- */
 
 els.input.addEventListener("input", render);
 
-els.refresh.addEventListener("click", loadRates);
+els.refresh.addEventListener("click", () => loadRates({ force: true }));
 
 els.results.addEventListener("click", async (event) => {
   const card = event.target.closest(".card");
@@ -197,7 +297,7 @@ els.results.addEventListener("click", async (event) => {
   const amount = currentAmount();
   if (amount === null) return;
 
-  const text = formatCopy(amount * rates[card.dataset.code], card.dataset.code);
+  const text = formatCopy(amount * rates[card.dataset.code]);
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -235,7 +335,7 @@ let installPrompt = null;
 
 if (isIOS && !isStandalone) {
   els.install.hidden = false;
-  els.install.textContent = "⤓ Add to Home Screen";
+  els.install.textContent = "⤓ Thêm vào Màn hình chính";
 }
 
 window.addEventListener("beforeinstallprompt", (event) => {
