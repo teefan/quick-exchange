@@ -2,10 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Quick Exchange — USD Converter</title>
   <meta name="description" content="Convert US Dollars to JPY, THB, KRW, HKD and SGD at live exchange rates." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💱</text></svg>" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Quick Exchange" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -39,9 +46,16 @@
     <section id="results" class="grid" aria-live="polite"></section>
 
     <footer class="footer">
-      <button id="refresh" type="button">↻ Refresh rates</button>
+      <div class="actions">
+        <button id="refresh" type="button">↻ Refresh rates</button>
+        <button id="install" class="primary" type="button" hidden>⤓ Install app</button>
+      </div>
       <span id="updated" class="updated"></span>
     </footer>
+    <p id="ios-hint" class="ios-hint" hidden>
+      Tap <strong>Share</strong> <span aria-hidden="true">⎋</span> in Safari, then
+      <strong>Add to Home Screen</strong> to install.
+    </p>
   </main>
 
   <script src="app.js"></script>

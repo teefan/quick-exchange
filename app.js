@@ -45,6 +45,8 @@ const els = {
   status: document.getElementById("status"),
   refresh: document.getElementById("refresh"),
   updated: document.getElementById("updated"),
+  install: document.getElementById("install"),
+  iosHint: document.getElementById("ios-hint"),
 };
 
 let rates = null;
@@ -211,6 +213,53 @@ els.results.addEventListener("keydown", (event) => {
   if (!event.target.closest(".card")) return;
   event.preventDefault();
   event.target.closest(".card").click();
+});
+
+/* ---------- PWA: service worker + install ---------- */
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./sw.js")
+      .catch((err) => console.warn("Service worker registration failed", err));
+  });
+}
+
+const isIOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone =
+  window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+let installPrompt = null;
+
+if (isIOS && !isStandalone) {
+  els.install.hidden = false;
+  els.install.textContent = "⤓ Add to Home Screen";
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  els.install.hidden = false;
+});
+
+els.install.addEventListener("click", async () => {
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    els.install.hidden = true;
+  } else {
+    // iOS Safari has no install prompt API — show manual instructions.
+    els.iosHint.hidden = !els.iosHint.hidden;
+  }
+});
+
+window.addEventListener("appinstalled", () => {
+  installPrompt = null;
+  els.install.hidden = true;
+  els.iosHint.hidden = true;
 });
 
 /* ---------- Init ---------- */

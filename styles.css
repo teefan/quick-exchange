@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg: #0b1220;
   --panel: rgba(255, 255, 255, 0.06);
   --panel-strong: rgba(255, 255, 255, 0.1);
@@ -27,9 +28,13 @@ body {
     radial-gradient(50rem 35rem at 110% 10%, rgba(59, 130, 246, 0.2), transparent 55%),
     var(--bg);
   display: grid;
-  place-items: start center;
-  padding: clamp(1.5rem, 5vw, 4rem) 1rem 3rem;
+  grid-template-columns: minmax(0, 1fr); /* definite track so .app can't outgrow the viewport */
+  align-items: start;
+  justify-items: center;
+  padding: max(1.5rem, env(safe-area-inset-top) + 0.75rem) 1rem
+    max(3rem, env(safe-area-inset-bottom) + 1.25rem);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app {
@@ -153,10 +158,12 @@ body {
   backdrop-filter: blur(8px);
 }
 
-.card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(34, 211, 167, 0.5);
-  background: var(--panel-strong);
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(34, 211, 167, 0.5);
+    background: var(--panel-strong);
+  }
 }
 
 .card:active {
@@ -225,6 +232,12 @@ body {
   flex-wrap: wrap;
 }
 
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 button {
   font: inherit;
   font-size: 0.85rem;
@@ -235,6 +248,30 @@ button {
   padding: 0.5rem 0.9rem;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
+}
+
+button.primary {
+  color: #06251c;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+button.primary:hover {
+  background: #3ee6bb;
+}
+
+.ios-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: var(--accent-soft);
+  border: 1px dashed rgba(34, 211, 167, 0.45);
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+}
+
+.ios-hint strong {
+  color: var(--text);
 }
 
 button:hover {
@@ -253,4 +290,45 @@ button:disabled {
 .updated {
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .card {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .card-head .name {
+    display: none; /* flags + codes are enough at this size */
+  }
+
+  .card-value {
+    font-size: 1.15rem;
+  }
+
+  .card-rate {
+    font-size: 0.7rem;
+  }
+
+  .status {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .card-value {
+    font-size: 1rem;
+  }
+}
+
+/* ---------- Installed app (standalone display) ---------- */
+@media (display-mode: standalone) {
+  body {
+    padding-top: max(1.25rem, env(safe-area-inset-top) + 0.5rem);
+  }
 }
